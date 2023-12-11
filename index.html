@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+      function validateAvailableLetters() {
+    let input = document.getElementById('availableLetters');
+    //input.value = input.value.replace(/[^A-Za-zĀ-ž]/g, '');//.toUpperCase();
+    input.value = input.value.toUpperCase();
+}
+
+function validateFixedLetters() {
+    let availableLetters = document.getElementById('availableLetters').value;
+    let input = document.getElementById('fixedLetters');
+
+    // Replace empty spaces with underscores
+    input.value = input.value.replace(/\s/g, '_');
+
+    // Convert lowercase letters to uppercase
+    input.value = input.value.toUpperCase();
+
+    // Remove characters not present in availableLetters
+    input.value = input.value.split('').filter(char => availableLetters.includes(char) || char === '_').join('');
+
+    // Ensure the length matches the availableLetters input
+    if (input.value.length > availableLetters.length) {
+        input.value = input.value.substring(0, availableLetters.length);
+    }
+
+    // Ensure the count of each letter does not exceed the count in availableLetters
+    let letterCount = {};
+    for (let char of availableLetters) {
+        letterCount[char] = (letterCount[char] || 0) + 1;
+    }
+
+    input.value = input.value.split('').filter(char => {
+        if (char === '_') {
+            return true;
+        } else if (letterCount[char] > 0) {
+            letterCount[char]--;
+            return true;
+        }
+        return false;
+    }).join('');
+}
+
+function showCombinations() {
+    let availableLetters = document.getElementById('availableLetters').value;
+    let fixedLetters = document.getElementById('fixedLetters').value;
+
+    // Replace underscores with unused letters from availableLetters
+    let combinations = getCombinations(fixedLetters, availableLetters);
+
+    // Display combinations on the page
+    let combinationsResult = document.getElementById('combinationsResult');
+    combinationsResult.innerHTML = "<p>Kombinācijas:</p><p>" + combinations.join('<br>') + "</p>";
+}
+
+function generateCombinations(prefix, remainingLetters, count) {
+    if (count === 0) {
+        return [prefix];
+    }
+
+    let combinations = [];
+
+    for (let i = 0; i < remainingLetters.length; i++) {
+        let newPrefix = prefix + remainingLetters[i];
+        let newRemaining = remainingLetters.slice(0, i).concat(remainingLetters.slice(i + 1));
+        combinations = combinations.concat(generateCombinations(newPrefix, newRemaining, count - 1));
+    }
+
+    return combinations;
+}
+
+function getCombinations(fixedLetters, availableLetters) {
+
+    let availableLettersArray = availableLetters.split('');
+
+    //all fixedLetters without underscores 
+    let fixedCharsArray = fixedLetters.split('').filter(char => char !== '_');
+
+    for (let fixedChar of fixedCharsArray) {
+        let charIndex = availableLettersArray.indexOf(fixedChar);
+
+        if (charIndex !== -1) {
+            // Remove the found character from availableLettersArray
+            availableLettersArray.splice(charIndex, 1);
+        }
+    }
+
+    let numberOfUnderscores = (fixedLetters.match(/_/g) || []).length;
+
+    let allCombinations = generateCombinations('', availableLettersArray, numberOfUnderscores);
+    
+    let uniqueCombinations = [...new Set(allCombinations)];
+
+    let result = uniqueCombinations.map(combination => {
+        let resultString = '';
+        let combinationIndex = 0;
+    
+        for (let char of fixedLetters) {
+            if (char === '_') {
+                resultString += combination[combinationIndex];
+                combinationIndex++;
+            } else {
+                resultString += char;
+            }
+        }
+    
+        return resultString;
+    });
+
+    return result;
+}
+      </script>
+      <style>
+        body {
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    text-align: center;
+}
+
+input {
+    margin: 10px;
+    padding: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+}
+
+    </style>
+    <title>Burtu puzles palīgs</title>
+</head>
+<body>
+    <div class="container">
+        <label for="availableLetters">Visi pieejamie burti:</label>
+        <input type="text" id="availableLetters" maxlength="26" oninput="validateAvailableLetters()">
+        <br>
+        <label for="fixedLetters">Zināmie un nezināmie bulti<br>Nezināmā burta vietā raksti tukšumu:</label>
+        <input type="text" id="fixedLetters" maxlength="26" oninput="validateFixedLetters()">
+        <br>
+        <button onclick="showCombinations()">Parādīt kombinācijas</button>
+        <hr> <!-- Horizontal rule separator -->
+        <div id="combinationsResult"></div>
+    </div>
+</body>
+</html>
